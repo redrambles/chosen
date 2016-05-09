@@ -14,6 +14,9 @@ class AbstractChosen
     this.on_ready()
 
   set_default_values: ->
+    @is_multiple = @form_field.multiple
+    @default_text_default = if @is_multiple then "Select Some Options" else "Select an Option"
+    
     @click_test_action = (evt) => this.test_active_click(evt)
     @activate_action = (evt) => this.activate_field(evt)
     @active_field = false
@@ -22,6 +25,7 @@ class AbstractChosen
     @result_highlighted = null
     @allow_single_deselect = if @options.allow_single_deselect? and @form_field.options[0]? and @form_field.options[0].text is "" then @options.allow_single_deselect else false
     @disable_search_threshold = @options.disable_search_threshold || 0
+    @enable_select_all = if @options.enable_select_all? and @is_multiple then @options.enable_select_all else false
     @disable_search = @options.disable_search || false
     @enable_split_word_search = if @options.enable_split_word_search? then @options.enable_split_word_search else true
     @group_search = if @options.group_search? then @options.group_search else true
@@ -43,6 +47,7 @@ class AbstractChosen
       @default_text = @options.placeholder_text_single || @options.placeholder_text || AbstractChosen.default_single_text
 
     @results_none_found = @form_field.getAttribute("data-no_results_text") || @options.no_results_text || AbstractChosen.default_no_result_text
+    @select_all_results = @form_field.getAttribute("data-select_all_results_text") || @options.select_all_results_text || AbstractChosen.default_select_all_results_text
 
   choice_label: (item) ->
     if @include_group_label_in_selected and item.group_label?
@@ -248,6 +253,8 @@ class AbstractChosen
       when 9, 38, 40, 16, 91, 17
         # don't do anything on these keys
       else this.results_search()
+    
+    this.select_all_toggle() if @enable_select_all
 
   clipboard_event_checker: (evt) ->
     setTimeout (=> this.results_search()), 50
@@ -301,4 +308,4 @@ class AbstractChosen
   @default_multiple_text: "Select Some Options"
   @default_single_text: "Select an Option"
   @default_no_result_text: "No results match"
-
+  @default_select_all_results_text: "Select all options"

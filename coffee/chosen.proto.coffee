@@ -11,6 +11,7 @@ class @Chosen extends AbstractChosen
     @single_temp = new Template('<a class="chosen-single chosen-default"><span>#{default}</span><div><b></b></div></a><div class="chosen-drop"><div class="chosen-search"><input type="text" autocomplete="off" /></div><ul class="chosen-results"></ul></div>')
     @multi_temp = new Template('<ul class="chosen-choices"><li class="search-field"><input type="text" value="#{default}" class="default" autocomplete="off" style="width:25px;" /></li></ul><div class="chosen-drop"><ul class="chosen-results"></ul></div>')
     @no_results_temp = new Template('<li class="no-results">' + @results_none_found + ' "<span>#{terms}</span>"</li>')
+    @select_all_temp = new Template('<a href="javascript:void(0)" class="chzn-select-all">#{copy}</a>')
 
   set_up_html: ->
     container_classes = ["chosen-container"]
@@ -29,6 +30,8 @@ class @Chosen extends AbstractChosen
 
     @form_field.hide().insert({ after: @container })
     @dropdown = @container.down('div.chosen-drop')
+
+    this.select_all_setup() if @enable_select_all
 
     @search_field = @container.down('input')
     @search_results = @container.down('ul.chosen-results')
@@ -232,7 +235,7 @@ class @Chosen extends AbstractChosen
     @search_field.value = @search_field.value
 
     this.winnow_results()
-    @form_field.fire("chosen:showing_dropdown", {chosen: this})
+    this.select_all_toggle() if @enable_select_all
 
   update_results_content: (content) ->
     @search_results.update content
@@ -246,6 +249,32 @@ class @Chosen extends AbstractChosen
 
     @results_showing = false
 
+  select_all_setup: ->
+    @dropdown.insert(@select_all_temp.evaluate({ "copy": @select_all_results }))
+    @select_all_link = @dropdown.down(".chzn-select-all")
+    @select_all_link.observe("click", (evt) => this.select_all_options(evt))
+
+  select_all_options: (evt) ->
+    evt.stop()
+    @form_field.select("option").each (option) ->
+      option.selected = true if not option.disabled
+    @form_field.fire("liszt:updated")
+    @form_field.fire("liszt:selectall")
+    this.select_all_disable()
+    this.results_hide()
+  
+  select_all_disable: ->
+    @select_all_link.hide()
+  
+  select_all_enable: ->
+    @select_all_link.show()
+    
+  select_all_toggle: ->
+    actives = @search_results.select("li.active-result")
+    if not actives.length or @search_field.value.length
+      this.select_all_disable()
+    else
+      this.select_all_enable()
 
   set_tab_index: (el) ->
     if @form_field.tabIndex
